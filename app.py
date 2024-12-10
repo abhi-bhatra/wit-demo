@@ -2,6 +2,7 @@ from flask import Flask, request, render_template_string, redirect, session, sen
 import sqlite3
 
 app = Flask(__name__)
+app.secret_key = 'YOUR_UNIQUE_AND_SECRET_KEY_HERE'
 
 def init_db():
     conn = sqlite3.connect('users.db')
