@@ -1,7 +1,7 @@
 from flask import Flask, request, render_template_string, redirect, session, send_file
 import sqlite3
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='/static')
 app.secret_key = 'YOUR_UNIQUE_AND_SECRET_KEY_HERE'
 
 def init_db():
@@ -24,13 +24,56 @@ init_db()
 add_user("admin", "admin123")
 
 LOGIN_TEMPLATE = """
-<html>
-    <h1>Welcome {{name}}!</h1>
-    <form method="POST" action="/login">
-        Username: <input type="text" name="username"><br>
-        Password: <input type="text" name="password"><br>
-        <input type="submit" value="Login">
-    </form>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Notes - Login</title>
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 50px;
+        }
+        .login-container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .login-header {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #343a40;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="login-container">
+            <div class="login-header">
+                <h1 class="h3">Welcome {{name}}!</h1>
+                <p class="text-muted">Please sign in to access your notes</p>
+            </div>
+            <form method="POST" action="/login">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="username" name="username" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="text" class="form-control" id="password" name="password" required>
+                </div>
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">Login</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
 </html>
 """
 
@@ -79,17 +122,70 @@ def dashboard():
     notes = result[0] if result else ""
     conn.close()
     
-    # Vulnerable: XSS through direct HTML rendering
+    # Improved UI for dashboard while maintaining the same functionality
     return f"""
-    <h1>Dashboard</h1>
-    <p>Welcome {session['username']}!</p>
-    <h2>Your Notes:</h2>
-    {notes}
-    <form method="POST">
-        <textarea name="note">{notes}</textarea>
-        <input type="submit" value="Save Note">
-    </form>
-    <a href="/logout">Logout</a>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Secure Notes - Dashboard</title>
+        <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+        <style>
+            body {{
+                background-color: #f8f9fa;
+                padding: 20px;
+            }}
+            .dashboard-container {{
+                max-width: 800px;
+                margin: 0 auto;
+                background-color: white;
+                border-radius: 10px;
+                box-shadow: 0 0 20px rgba(0,0,0,0.1);
+                padding: 25px;
+            }}
+            .notes-area {{
+                background-color: #f8f9fa;
+                border-radius: 5px;
+                padding: 15px;
+                margin-bottom: 20px;
+                border-left: 4px solid #0d6efd;
+            }}
+            .header-bar {{
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 25px;
+                padding-bottom: 15px;
+                border-bottom: 1px solid #e9ecef;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="dashboard-container">
+            <div class="header-bar">
+                <h1 class="h3">Notes Dashboard</h1>
+                <div>
+                    <span class="badge bg-success">Logged in as {session['username']}</span>
+                    <a href="/logout" class="btn btn-outline-danger btn-sm ms-2">Logout</a>
+                </div>
+            </div>
+            
+            <h2 class="h4 mb-3">Your Notes</h2>
+            <div class="notes-area">
+                {notes}
+            </div>
+            
+            <form method="POST">
+                <div class="mb-3">
+                    <label for="note" class="form-label">Edit Your Notes:</label>
+                    <textarea name="note" id="note" class="form-control" rows="6">{notes}</textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Save Note</button>
+            </form>
+        </div>
+    </body>
+    </html>
     """
 
 @app.route('/logout')
